@@ -70,7 +70,9 @@ else:
 	#Note that in the case of a full 2pi run, the data will become distorted in the surface plot, as it is squeezed by a factor of 3./4.
 	phi2=((nphi-1)*360./(nphi))*np.arange((ntiles-1)*nphi)/((nphi-1)*nphi-1)
 	
-lat=180.-grid.y*180./np.pi
+#MJK Corrected this, as it is already co-latitude
+#lat=180.-grid.y*180./np.pi
+lat=grid.y*180./np.pi
 r=grid.x
 
 #2D arrays for projections of coordinates
