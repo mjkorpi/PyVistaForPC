@@ -38,7 +38,9 @@ def _cell_bounds(points, bound_position=0.5):
 
 
 # First, read in the data
+# Minimize memory usage by reading in double precision floats as single
 var = pc.read.var(trimall=True,precision="half")
+#Pencil Code axis will be defined in radians. vtk eats degrees.
 grid=pc.read.grid(trim=True,precision="half")
 
 
@@ -66,21 +68,22 @@ ntiles=int(2.*np.pi/grid.z[nphi-1])
 # For onion layers, you want to leave the top open. This parameter tells how many 
 # wedge tiles you want to leave open for the largest onion layer
 ntileso=2
-#Original phi array
+#Original phi array, transformed into degrees
 phiw=180.*grid.z/np.pi
-#Replicating over the full longitudinal range; to be used with data that you want 
-# to be shown over a full sphere
+# Replicating over the full longitudinal range; to be used with data that you want 
+# to be shown over a full sphere; in the onion-type plot this will be the low
 phi=360.*np.arange(ntiles*nphi)/(ntiles*nphi-1)
 #Onion type plotting needs to be done differently for wedges and full spheres
 if ntiles > 1:
-	#Removing one wedge tile to show the interior in an onion type plot
+	#Removing ntileso tiles to make the next layer of onion peeling; should be repeated,
+        #if more layers are wanted, but is trivial.
 	phi2=((ntiles-ntileso)*360./(ntiles))*np.arange((ntiles-ntileso)*nphi)/((ntiles-ntileso)*nphi-1)
 else:
 	#The same here, but ntiles cannot be used
 	#Note that in the case of a full 2pi run, the data will become distorted in the surface plot, as it is currently squeezed. Could be done more intelligently, but now no time.
 #	phi2=((nphi-1)*360./(nphi))*np.arange((ntiles-1)*nphi)/((nphi-1)*nphi-1)
 	phi2=180.*grid.z/np.pi/ntileso
-# Co-latitude grid
+# Co-latitude grid in degrees
 lat=grid.y*180./np.pi
 # Radius
 r=grid.x
@@ -91,7 +94,7 @@ xx2, yy = np.meshgrid(phi2, lat) #On a sphere
 zz, yy = np.meshgrid(r, lat) #On meridional slices
 
 
-# Scalar data
+# Scalar data for surface contour plots on spheres
 scalartop=np.tile(var.uu[0,:,:,rtop].T,ntiles)
 scalartop2=np.tile(var.uu[0,:,:,rtop].T,ntiles-ntileso)
 scalarbot=np.tile(var.uu[0,:,:,rbot].T,ntiles)
@@ -108,11 +111,13 @@ zz_bounds = _cell_bounds(r)
 levels = [TOP * 1.01]
 levels2 = [BOT + 0.01]
 
-# Grid on the sphere
+# Creating Cartesian grid that describes spherical surfaces at TOP and BOT levels,
+# either full and partial depending on where on the onion you are...
+# ... and meridional surfaces 0. and the desired azimuthal "opening of the cone"
 grid_scalartop = pv.grid_from_sph_coords(xx_bounds, yy_bounds, levels)
 grid_scalartop2 = pv.grid_from_sph_coords(xx_bounds2, yy_bounds, levels)
 grid_scalarbot = pv.grid_from_sph_coords(xx_bounds, yy_bounds, levels2)
-# Meridional grid
+# ... and meridional surfaces 0. and the desired azimuthal "opening of the cone"
 grid_scalarmer1 = pv.grid_from_sph_coords(0., yy_bounds, zz_bounds)
 grid_scalarmer2 = pv.grid_from_sph_coords(-ntileso*360./ntiles, yy_bounds, zz_bounds)
 
@@ -186,7 +191,7 @@ stream, src = mesh.streamlines('vectors', return_source=True,
 p.subplot(1, 0)
 #p.add_mesh(mesh.outline(), color="k")
 #p.add_mesh(src)
-p.add_mesh(stream.tube(radius=0.01), lighting=False,cmap="rainbow")
+p.add_mesh(stream.tube(radius=0.005), lighting=False,cmap="rainbow")
 
 ##### Show all together #######################
 p.subplot(1, 1)
